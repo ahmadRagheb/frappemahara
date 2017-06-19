@@ -36,7 +36,7 @@ frappe.email_defaults = {
 		"use_ssl": 1,
 		"enable_outgoing": 1,
 		"smtp_server": "smtp.mail.yahoo.com",
-		"smtp_port": 465,
+		"smtp_port": 587,
 		"use_tls": 1,
 		"use_imap": 1
 	},
@@ -69,7 +69,6 @@ frappe.email_defaults_pop = {
 
 frappe.ui.form.on("Email Account", {
 	service: function(frm) {
-		console.log(frm.doc.service, frappe.email_defaults[frm.doc.service])
 		$.each(frappe.email_defaults[frm.doc.service], function(key, value) {
 			frm.set_value(key, value);
 		})

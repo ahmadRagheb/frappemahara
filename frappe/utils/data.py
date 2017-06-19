@@ -348,12 +348,9 @@ def fmt_money(amount, precision=None, currency=None):
 	"""
 	Convert to string with commas for thousands, millions etc
 	"""
-	number_format = None
-	if currency:
-		number_format = frappe.db.get_value("Currency", currency, "number_format", cache=True)
-
-	if not number_format:
-		number_format = frappe.db.get_default("number_format") or "#,###.##"
+	number_format = frappe.db.get_default("number_format") or "#,###.##"
+	if precision is None:
+		precision = cint(frappe.db.get_default('currency_precision')) or None
 
 	decimal_str, comma_str, number_format_precision = get_number_format_info(number_format)
 
@@ -422,7 +419,14 @@ def money_in_words(number, main_currency = None, fraction_currency=None):
 	from frappe.utils import get_defaults
 	_ = frappe._
 
-	if not number or flt(number) < 0:
+	try:
+		# note: `flt` returns 0 for invalid input and we don't want that
+		number = float(number)
+	except ValueError:
+		return ""
+
+	number = flt(number)
+	if number < 0:
 		return ""
 
 	d = get_defaults()
@@ -431,20 +435,33 @@ def money_in_words(number, main_currency = None, fraction_currency=None):
 	if not fraction_currency:
 		fraction_currency = frappe.db.get_value("Currency", main_currency, "fraction") or _("Cent")
 
-	n = "%.2f" % flt(number)
-	main, fraction = n.split('.')
-	if len(fraction)==1: fraction += '0'
-
-
 	number_format = frappe.db.get_value("Currency", main_currency, "number_format", cache=True) or \
 		frappe.db.get_default("number_format") or "#,###.##"
+		
+	fraction_length = get_number_format_info(number_format)[2]
+
+	n = "%.{0}f".format(fraction_length) % number
+
+	numbers = n.split('.')
+	main, fraction =  numbers if len(numbers) > 1 else [n, '00']
+
+	if len(fraction) < fraction_length:
+		zeros = '0' * (fraction_length - len(fraction))
+		fraction += zeros
 
 	in_million = True
 	if number_format == "#,##,###.##": in_million = False
 
-	out = main_currency + ' ' + in_words(main, in_million).title()
-	if cint(fraction):
-		out = out + ' ' + _('and') + ' ' + in_words(fraction, in_million).title() + ' ' + fraction_currency
+	# 0.00
+	if main == '0' and fraction in ['00', '000']:
+		out = "{0} {1}".format(main_currency, _('Zero'))
+	# 0.XX
+	elif main == '0':
+		out = _(in_words(fraction, in_million).title()) + ' ' + fraction_currency
+	else:
+		out = main_currency + ' ' + _(in_words(main, in_million).title())
+		if cint(fraction):
+			out = out + ' ' + _('and') + ' ' + _(in_words(fraction, in_million).title()) + ' ' + fraction_currency
 
 	return out + ' ' + _('only.')
 
@@ -615,6 +632,9 @@ def get_url(uri=None, full_address=False):
 
 	if not uri and full_address:
 		uri = frappe.get_request_header("REQUEST_URI", "")
+
+	if frappe.conf.http_port:
+		host_name = host_name + ':' + str(frappe.conf.http_port)
 
 	url = urllib.basejoin(host_name, uri) if uri else host_name
 

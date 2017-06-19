@@ -87,8 +87,7 @@ frappe.search.utils = {
                     if(level) {
                         out.push({
                             type: "In List",
-                            prefix: "Find '" + __(parts[0]).bold() + "' in ",
-                            label: __(me.bolden_match_part(item, parts[1])),
+                            label: __('Find {0} in {1}', [__(parts[0]), me.bolden_match_part(__(item), parts[1])]),
                             value: __('Find {0} in {1}', [__(parts[0]), __(item)]),
                             route_options: {"name": ["like", "%" + parts[0] + "%"]},
                             index: 1 + level,
@@ -110,9 +109,8 @@ frappe.search.utils = {
 				if(level) {
 					out.push({
 						type: "New",
-						prefix: "New ",
-						label: __(me.bolden_match_part(item, keywords.substr(4))),
-						value: __("New {0}", [item]),
+						label: __("New {0}", [me.bolden_match_part(__(item), keywords.substr(4))]),
+						value: __("New {0}", [__(item)]),
 						index: 1 + level,
 						match: item,
 						onclick: function() { frappe.new_doc(item, true); }
@@ -131,8 +129,8 @@ frappe.search.utils = {
 		var option = function(type, route, order) {
 			return {
 				type: type,
-                label: __("{0}" + " " + type, [__(me.bolden_match_part(target, keywords))]),
-				value: __(target + " " + type),
+				label: me.bolden_match_part(__(target), keywords) + " " + __(type),
+				value: __(target) + " " + __(type),
 				index: level + order,
 				match: target,
 				route: route,
@@ -151,7 +149,7 @@ frappe.search.utils = {
                             var match = item;
                             out.push({
                                 type: "New",
-                                label: __("New {0}", [__(me.bolden_match_part(item, keywords))]),
+                                label: __("New {0}", [me.bolden_match_part(__(item), keywords)]),
                                 value: __("New {0}", [__(item)]),
                                 index: level + 0.01,
                                 match: item,
@@ -180,6 +178,7 @@ frappe.search.utils = {
     get_reports: function(keywords) {
         var me = this;
 		var out = [];
+        var route;
 		Object.keys(frappe.boot.user.all_reports).forEach(function(item) {
 			var level = me.fuzzy_search(keywords, item);
 			if(level > 0) {
@@ -190,9 +189,8 @@ frappe.search.utils = {
 					route = ["query-report",  item];
 				out.push({
                     type: "Report",
-                    prefix: "Report ",
-					label: __(me.bolden_match_part(item, keywords)),
-					value: __("Report {0}" , [item]),
+					label: __("Report {0}" , [me.bolden_match_part(__(item), keywords)]),
+					value: __("Report {0}" , [__(item)]),
 					index: level,
 					route: route
 				});
@@ -215,8 +213,7 @@ frappe.search.utils = {
 				var page = me.pages[item];
 				out.push({
 					type: "Page",
-					prefix: "Open ",
-					label: __(me.bolden_match_part(me.unscrub_and_titlecase(item), keywords)),
+					label: __("Open {0}", [me.bolden_match_part(__(item), keywords)]),
 					value: __("Open {0}", [__(item)]),
 					match: item,
 					index: level,
@@ -228,12 +225,19 @@ frappe.search.utils = {
         if(__('calendar').indexOf(keywords.toLowerCase()) === 0) {
 			out.push({
 				type: "Calendar",
-				prefix: "Open ",
-				label: __('Calendar'),
 				value: __("Open {0}", [__(target)]),
 				index: me.fuzzy_search(keywords, 'Calendar'),
 				match: target,
 				route: ['List', 'Event', target],
+			});
+		}
+        if(__('email inbox').indexOf(keywords.toLowerCase()) === 0) {
+			out.push({
+				type: "Inbox",
+				value: __("Open {0}", [__('Email Inbox')]),
+				index: me.fuzzy_search(keywords, 'email inbox'),
+				match: target,
+				route: ['List', 'Communication', 'Inbox'],
 			});
 		}
 		return out;
@@ -249,8 +253,7 @@ frappe.search.utils = {
 				if(module._doctype) return;
 				ret = {
 					type: "Module",
-					prefix: "Open ",
-					label: __(me.bolden_match_part(item, keywords)),
+					label: __("Open {0}", [me.bolden_match_part(__(item), keywords)]),
 					value: __("Open {0}", [__(item)]),
 					index: level,
 				}
@@ -276,42 +279,61 @@ frappe.search.utils = {
             }
 
             function make_description(content, doc_name) {
-                parts = content.split("|||");
-                content_length = 300;
-                fields = [];
-                current_length = 0;
+                var parts = content.split(" ||| ");
+                var result_max_length = 300;
+                var field_length = 120;
+                var fields = [];
+                var result_current_length = 0;
                 var field_text = "";
                 for(var i = 0; i < parts.length; i++) {
                     part = parts[i];
                     if(part.toLowerCase().indexOf(keywords) !== -1) {
-                        if(part.indexOf('&&&') !== -1) {
-                            var colon_index = part.indexOf('&&&');
-                            var field_value = part.slice(colon_index + 3);
+                        // If the field contains the keyword
+                        if(part.indexOf(' &&& ') !== -1) {
+                            var colon_index = part.indexOf(' &&& ');
+                            var field_value = part.slice(colon_index + 5);
                         } else {
-                            var colon_index = part.indexOf(':');
-                            var field_value = part.slice(colon_index + 1);
+                            var colon_index = part.indexOf(' : ');
+                            var field_value = part.slice(colon_index + 3);
+                        }
+                        if(field_value.length > field_length) {
+                            // If field value exceeds field_length, find the keyword in it
+                            // and trim field value by half the field_length at both sides
+                            // ellipsify if necessary
+                            var field_data = "";
+                            var index = field_value.indexOf(keywords);
+                            field_data += index < field_length/2 ? field_value.slice(0, index)
+                                : '...' + field_value.slice(index - field_length/2, index)
+                            field_data += field_value.slice(index, index + field_length/2);
+                            field_data += index + field_length/2 < field_value.length ? "..." : "";
+                            field_value = field_data;
                         }
                         var field_name = part.slice(0, colon_index);
 
-                        var remaining_length = content_length - current_length;
-                        current_length += field_name.length + field_value.length + 2;
-                        if(current_length < content_length) {
+                        // Find remaining result_length and add field length to result_current_length
+                        var remaining_length = result_max_length - result_current_length;
+                        result_current_length += field_name.length + field_value.length + 2;
+                        if(result_current_length < result_max_length) {
+                            // We have room, push the entire field
                             field_text = '<span class="field-name text-muted">' +
-                                me.bolden_match_part(field_name, keywords) + ':' + '</span>' +
+                                me.bolden_match_part(field_name, keywords) + ': </span> ' +
                                 me.bolden_match_part(field_value, keywords);
                             if(fields.indexOf(field_text) === -1 && doc_name !== field_value) {
                                 fields.push(field_text);
                             }
                         } else {
+                            // Not enough room
                             if(field_name.length < remaining_length){
+                                // Ellipsify (trim at word end) and push
                                 remaining_length -= field_name.length;
                                 field_text = '<span class="field-name text-muted">' +
-                                    me.bolden_match_part(field_name, keywords) + ':' + '</span>';
+                                    me.bolden_match_part(field_name, keywords) + ': </span> ';
                                 field_value = field_value.slice(0, remaining_length);
                                 field_value = field_value.slice(0, field_value.lastIndexOf(' ')) + ' ...';
                                 field_text += me.bolden_match_part(field_value, keywords);
                                 fields.push(field_text);
                             } else {
+                                // No room for even the field name, skip
                                 fields.push('...');
                             }
                             break;
@@ -544,10 +566,5 @@ frappe.search.utils = {
             return rendered;
         }
 
-    },
-
-    unscrub_and_titlecase: function(str) {
-        return __(str || '').replace(/-|_/g, " ").replace(/\w*/g,
-            function(keywords){return keywords.charAt(0).toUpperCase() + keywords.substr(1).toLowerCase();});
     },
 }

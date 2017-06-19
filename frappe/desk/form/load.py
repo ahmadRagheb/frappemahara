@@ -33,6 +33,7 @@ def getdoc(doctype, name, user=None):
 		run_onload(doc)
 
 		if not doc.has_permission("read"):
+			frappe.flags.error_message = _('Insufficient Permission for {0}').format(frappe.bold(doctype + ' ' + name))
 			raise frappe.PermissionError, ("read", doctype, name)
 
 		doc.apply_fieldlevel_read_permissions()
@@ -171,6 +172,9 @@ def get_communication_data(doctype, name, start=0, limit=20, after=None, fields=
 	if after:
 		# find after a particular date
 		conditions+= ' and creation > {0}'.format(after)
+
+	if doctype=='User':
+		conditions+= ' and not (reference_doctype="User" and communication_type="Communication")'
 
 	communications = frappe.db.sql("""select {fields}
 		from tabCommunication

@@ -10,7 +10,7 @@ app_color = "orange"
 source_link = "https://github.com/frappe/frappe"
 app_license = "MIT"
 
-develop_version = '8.0.0-beta'
+develop_version = '8.x.x-beta'
 
 app_email = "info@frappe.io"
 
@@ -96,7 +96,7 @@ has_permission = {
 }
 
 has_website_permission = {
-	"Address": "erpnext.utilities.doctype.address.address.has_website_permission"
+	"Address": "frappe.geo.doctype.address.address.has_website_permission"
 }
 
 standard_queries = {
@@ -149,10 +149,12 @@ scheduler_events = {
 		"frappe.utils.scheduler.restrict_scheduler_events_if_dormant",
 		"frappe.email.doctype.auto_email_report.auto_email_report.send_daily",
 		"frappe.core.doctype.feedback_request.feedback_request.delete_feedback_request",
-		"frappe.core.doctype.authentication_log.authentication_log.clear_authentication_logs",
+		"frappe.core.doctype.authentication_log.authentication_log.clear_authentication_logs"
+	],
+	"daily_long": [
 		"frappe.integrations.doctype.dropbox_settings.dropbox_settings.take_backups_daily"
 	],
-	"weekly": [
+	"weekly_long": [
 		"frappe.integrations.doctype.dropbox_settings.dropbox_settings.take_backups_weekly"
 	],
 	"monthly": [

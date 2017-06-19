@@ -1,4 +1,4 @@
-from __future__ import unicode_literals, absolute_import
+from __future__ import unicode_literals, absolute_import, print_function
 import click
 import json, os, sys
 from distutils.spawn import find_executable
@@ -115,7 +115,7 @@ def execute(context, method, args=None, kwargs=None):
 		finally:
 			frappe.destroy()
 		if ret:
-			print json.dumps(ret)
+			print(json.dumps(ret))
 
 
 @click.command('add-to-email-queue')
@@ -205,7 +205,7 @@ def import_doc(context, path, force=False):
 	if not os.path.exists(path):
 		path = os.path.join('..', path)
 	if not os.path.exists(path):
-		print 'Invalid path {0}'.format(path)
+		print('Invalid path {0}'.format(path))
 		sys.exit(1)
 
 	for site in context.sites:
@@ -233,7 +233,7 @@ def import_csv(context, path, only_insert=False, submit_after_import=False, igno
 	if not os.path.exists(path):
 		path = os.path.join('..', path)
 	if not os.path.exists(path):
-		print 'Invalid path {0}'.format(path)
+		print('Invalid path {0}'.format(path))
 		sys.exit(1)
 
 	with open(path, 'r') as csvfile:
@@ -248,7 +248,7 @@ def import_csv(context, path, only_insert=False, submit_after_import=False, igno
 			via_console=True)
 		frappe.db.commit()
 	except Exception:
-		print frappe.get_traceback()
+		print(frappe.get_traceback())
 
 	frappe.destroy()
 
@@ -362,7 +362,7 @@ def request(context, args):
 
 			frappe.handler.execute_cmd(frappe.form_dict.cmd)
 
-			print frappe.response
+			print(frappe.response)
 		finally:
 			frappe.destroy()
 
@@ -397,7 +397,7 @@ def get_version():
 	for m in sorted(frappe.get_all_apps()):
 		module = frappe.get_module(m)
 		if hasattr(module, "__version__"):
-			print "{0} {1}".format(m, module.__version__)
+			print("{0} {1}".format(m, module.__version__))
 
 
 

@@ -32,7 +32,7 @@ frappe.route = function() {
 
 	frappe._cur_route = window.location.hash;
 
-	route = frappe.get_route();
+	var route = frappe.get_route();
 	if (route === false) {
 		return;
 	}
@@ -116,10 +116,11 @@ frappe.get_route_str = function(route) {
 }
 
 frappe.set_route = function() {
-	if(arguments.length===1 && $.isArray(arguments[0])) {
-		arguments = arguments[0];
+	var params = arguments;
+	if(params.length===1 && $.isArray(params[0])) {
+		params = params[0];
 	}
-	route = $.map(arguments, function(a) {
+	route = $.map(params, function(a) {
 		if($.isPlainObject(a)) {
 			frappe.route_options = a;
 			return null;
@@ -152,8 +153,9 @@ $(window).on('hashchange', function() {
 		return;
 
 	// hide open dialog
-	if(cur_dialog && cur_dialog.hide_on_page_refresh)
+	if(cur_dialog && cur_dialog.hide_on_page_refresh) {
 		cur_dialog.hide();
+	}
 
 	frappe.route();
 

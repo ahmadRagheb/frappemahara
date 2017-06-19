@@ -90,7 +90,7 @@ def get_list_context(context=None):
 		get_list = get_blog_list,
 		hide_filters = True,
 		children = get_children(),
-		show_search = True,
+		# show_search = True,
 		title = _('Blog')
 	)
 
@@ -105,7 +105,7 @@ def get_list_context(context=None):
 		list_context.sub_title = _('Filtered by "{0}"').format(frappe.local.form_dict.txt)
 
 	if list_context.sub_title:
-		list_context.parents = [{'label': _('All Posts'), 'route': 'blog'}]
+		list_context.parents = [{'label': _('All Posts'), 'route': 'blog', 'title': list_context.title}]
 	else:
 		list_context.parents = []
 
