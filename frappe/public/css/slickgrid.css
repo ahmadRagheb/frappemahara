@@ -7,6 +7,8 @@
 .slick-wrapper,
 .slick-header {
   border: none !important;
+    direction: ltr;
+
 }
 .slick-headerrow {
   border: none;

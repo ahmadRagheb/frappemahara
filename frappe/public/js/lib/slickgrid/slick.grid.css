@@ -9,6 +9,8 @@ classes should alter those!
   width: 100%;
   overflow: hidden;
   border-left: 0px;
+    direction: ltr;
+
 }
 
 .slick-header-columns, .slick-headerrow-columns {
